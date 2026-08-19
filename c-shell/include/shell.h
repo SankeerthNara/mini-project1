@@ -1,5 +1,5 @@
-#ifndef SHELL_H
-#define SHELL_H
+#ifndef CSHELL_SHELL_H
+#define CSHELL_SHELL_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +9,12 @@
 #include <limits.h>
 #include <pwd.h>
 
-#define INP_LENMAX 4096
+#define INPUT_BUFFER_MAX 4096
 
 typedef struct {
-  char home_dir[PATH_MAX];
-} ShellEnv;
+    char startup_home_directory[PATH_MAX];
+} ShellContext;
 
-extern ShellEnv sh_env;
+extern ShellContext shell_ctx;PATH_MAX
 
 #endif

@@ -10,49 +10,62 @@
 #define PATH_MAX 4096
 #endif
 
-void prompt_init(void) {
-  if (getcwd(sh_env.home_dir, sizeof(sh_env.home_dir)) == NULL) {
-    perror("getcwd");
-    exit(EXIT_FAILURE);
-  }
+void initialize_shell_prompt(void) {
+    if (getcwd(shell_ctx.startup_home_directory, sizeof(shell_ctx.startup_home_directory)) == NULL) {
+        perror("getcwd");
+        exit(EXIT_FAILURE);
+    }
 }
 
-void prompt_display(void) {
-    // 1. fetch user info
-    char *user = NULL;
-    struct passwd *pw = getpwuid(getuid());
-    if (pw && pw->pw_name) {
-        user = pw->pw_name;
+static void compute_prompt_display_path(const char *current_directory, 
+                                        const char *home_directory, 
+                                        char *output_buffer, 
+                                        size_t buffer_size) {
+    size_t home_len = strlen(home_directory);
+
+    if (strcmp(current_directory, home_directory) == 0) {
+        snprintf(output_buffer, buffer_size, "~");
+    } else if (strncmp(current_directory, home_directory, home_len) == 0 && 
+              (current_directory[home_len] == '/' || home_len == 1)) {
+        snprintf(output_buffer, buffer_size, "~%s", current_directory + home_len);
     } else {
-        user = getenv("USER");
-        if (!user) user = "user";
+        snprintf(output_buffer, buffer_size, "%s", current_directory);
+    }
+}
+
+void render_shell_prompt(void) {
+    // 1. Get logged-in username
+    char *username = NULL;
+    struct passwd *user_password_entry = getpwuid(getuid());
+    if (user_password_entry && user_password_entry->pw_name) {
+        username = user_password_entry->pw_name;
+    } else {
+        username = getenv("USER");
+        if (!username) {
+            username = "user";
+        }
     }
 
-  // 2. hostname
-  char host[HOST_NAME_MAX + 1];
-  if (gethostname(host, sizeof(host)) != 0) {
-      strncpy(host, "unknown", sizeof(host) - 1);
-      host[sizeof(host) - 1] = '\0';
-  }
+    // 2. Get system hostname
+    char system_hostname[HOST_NAME_MAX + 1];
+    if (gethostname(system_hostname, sizeof(system_hostname)) != 0) {
+        strncpy(system_hostname, "unknown", sizeof(system_hostname) - 1);
+        system_hostname[sizeof(system_hostname) - 1] = '\0';
+    }
 
-  // 3. cwd resolution
-  char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) == NULL) {
-      strncpy(cwd, "?", sizeof(cwd));
-  }
+    // 3. Get current working directory
+    char current_working_directory[PATH_MAX];
+    if (getcwd(current_working_directory, sizeof(current_working_directory)) == NULL) {
+        strncpy(current_working_directory, "?", sizeof(current_working_directory));
+    }
 
-  // 4. path shortening with ~
-  char display_path[PATH_MAX];
-  size_t home_len = strlen(sh_env.home_dir);
+    // 4. Format relative path with ~ replacement
+    char formatted_path[PATH_MAX];
+    compute_prompt_display_path(current_working_directory, 
+                                shell_ctx.startup_home_directory, 
+                                formatted_path, 
+                                sizeof(formatted_path));
 
-  if (strcmp(cwd, sh_env.home_dir) == 0) {
-      snprintf(display_path, sizeof(display_path), "~");
-  } else if (strncmp(cwd, sh_env.home_dir, home_len) == 0 && (cwd[home_len] == '/' || home_len == 1)) {
-    snprintf(display_path, sizeof(display_path), "~%s", cwd + home_len);
-  } else {
-      snprintf(display_path, sizeof(display_path), "%s", cwd);
-  }
-
-  printf("<%s@%s:%s> ", user, host, display_path);
-  fflush(stdout);
+    printf("<%s@%s:%s> ", username, system_hostname, formatted_path);
+    fflush(stdout);
 }

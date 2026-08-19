@@ -1,7 +1,7 @@
-#ifndef PROMPT_H
-#define PROMPT_H
+#ifndef CSHELL_PROMPT_H
+#define CSHELL_PROMPT_H
 
-void prompt_init(void);
-void prompt_display(void);
+void initialize_shell_prompt(void);
+void render_shell_prompt(void);
 
 #endif
