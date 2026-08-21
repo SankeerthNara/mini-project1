@@ -15,8 +15,14 @@
 #define PATH_MAX 4096
 #endif
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
 typedef struct {
     char startup_home_directory[PATH_MAX];
+    char previous_working_directory[PATH_MAX];
+    bool has_previous_working_directory;
 } ShellContext;
 
 extern ShellContext shell_ctx;

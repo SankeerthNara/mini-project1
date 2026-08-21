@@ -1,20 +1,13 @@
 #include "prompt.h"
 #include "shell.h"
-#include <limits.h>
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX 255
-#endif
-
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
 
 void initialize_shell_prompt(void) {
     if (getcwd(shell_ctx.startup_home_directory, sizeof(shell_ctx.startup_home_directory)) == NULL) {
         perror("getcwd");
         exit(EXIT_FAILURE);
     }
+    shell_ctx.has_previous_working_directory = false;
+    shell_ctx.previous_working_directory[0] = '\0';
 }
 
 static void compute_prompt_display_path(const char *current_directory, 
@@ -34,32 +27,26 @@ static void compute_prompt_display_path(const char *current_directory,
 }
 
 void render_shell_prompt(void) {
-    // 1. Get logged-in username
     char *username = NULL;
     struct passwd *user_password_entry = getpwuid(getuid());
     if (user_password_entry && user_password_entry->pw_name) {
         username = user_password_entry->pw_name;
     } else {
         username = getenv("USER");
-        if (!username) {
-            username = "user";
-        }
+        if (!username) username = "user";
     }
 
-    // 2. Get system hostname
     char system_hostname[HOST_NAME_MAX + 1];
     if (gethostname(system_hostname, sizeof(system_hostname)) != 0) {
         strncpy(system_hostname, "unknown", sizeof(system_hostname) - 1);
         system_hostname[sizeof(system_hostname) - 1] = '\0';
     }
 
-    // 3. Get current working directory
     char current_working_directory[PATH_MAX];
     if (getcwd(current_working_directory, sizeof(current_working_directory)) == NULL) {
         strncpy(current_working_directory, "?", sizeof(current_working_directory));
     }
 
-    // 4. Format relative path with ~ replacement
     char formatted_path[PATH_MAX];
     compute_prompt_display_path(current_working_directory, 
                                 shell_ctx.startup_home_directory, 
