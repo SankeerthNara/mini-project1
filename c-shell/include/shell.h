@@ -11,10 +11,14 @@
 
 #define INPUT_BUFFER_MAX 4096
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 typedef struct {
     char startup_home_directory[PATH_MAX];
 } ShellContext;
 
-extern ShellContext shell_ctx;PATH_MAX
+extern ShellContext shell_ctx;
 
 #endif

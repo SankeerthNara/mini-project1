@@ -1,6 +1,8 @@
 #include "shell.h"
 #include "prompt.h"
-
+#include "lexer.h"
+#include "parser.h"
+#include <unistd.h>
 
 ShellContext shell_ctx;
 
@@ -13,7 +15,6 @@ int main(void) {
         render_shell_prompt();
 
         if (fgets(raw_input_line, sizeof(raw_input_line), stdin) == NULL) {
-            // Clean exit on EOF (Ctrl+D)
             printf("\n");
             break;
         }
@@ -23,7 +24,23 @@ int main(void) {
             raw_input_line[input_length - 1] = '\0';
         }
 
-        // Ready for tokenization and parsing in A3
+        if (strlen(raw_input_line) == 0) {
+            continue;
+        }
+
+        // 1. Break raw text into tokens
+        ShellTokenStream token_stream = tokenize_input_line(raw_input_line);
+
+        // 2. Parse token stream according to right-linear grammar
+        ParsedCommandGroup *parsed_group = parse_command_grammar(&token_stream);
+
+        // 3. Print out the parsed structure (for testing A3)
+        if (parsed_group != NULL) {
+            print_parsed_command_group(parsed_group);
+            free_parsed_command_group(parsed_group);
+        }
+
+        free_token_stream(&token_stream);
     }
 
     return 0;
