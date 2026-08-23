@@ -3,49 +3,43 @@
 #include "lexer.h"
 #include "parser.h"
 #include "executor.h"
+#include "builtin_log.h"
 #include <unistd.h>
 
 ShellContext shell_ctx;
 
 int main(void) {
-    // 1. Initialize the root directory and prompt context
     initialize_shell_prompt();
 
     char raw_input_line[INPUT_BUFFER_MAX];
 
     while (1) {
-        // 2. Display the prompt (e.g., <user@host:~> )
         render_shell_prompt();
 
-        // 3. Read user input
         if (fgets(raw_input_line, sizeof(raw_input_line), stdin) == NULL) {
             printf("\n");
-            break; // Exit on Ctrl+D (EOF)
+            break;
         }
 
-        // 4. Strip trailing newline
         size_t input_length = strlen(raw_input_line);
         if (input_length > 0 && raw_input_line[input_length - 1] == '\n') {
             raw_input_line[input_length - 1] = '\0';
         }
 
         if (strlen(raw_input_line) == 0) {
-            continue; // Skip empty lines
+            continue;
         }
 
-        // 5. Lexical Analysis
-        ShellTokenStream token_stream = tokenize_input_line(raw_input_line);
+        log_record_command(raw_input_line);
 
-        // 6. Grammar Parsing
+        ShellTokenStream token_stream = tokenize_input_line(raw_input_line);
         ParsedCommandGroup *parsed_group = parse_command_grammar(&token_stream);
 
-        // 7. Execution (Replaces the old print_parsed_command_group)
         if (parsed_group != NULL) {
             execute_command_group(parsed_group);
             free_parsed_command_group(parsed_group);
         }
 
-        // 8. Cleanup
         free_token_stream(&token_stream);
     }
 

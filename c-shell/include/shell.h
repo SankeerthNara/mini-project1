@@ -23,6 +23,8 @@ typedef struct {
     char startup_home_directory[PATH_MAX];
     char previous_working_directory[PATH_MAX];
     bool has_previous_working_directory;
+    char last_foreground_command[256];
+    int last_foreground_duration_seconds;
 } ShellContext;
 
 extern ShellContext shell_ctx;
