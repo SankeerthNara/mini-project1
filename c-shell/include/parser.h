@@ -6,9 +6,15 @@
 #include <stddef.h>
 
 typedef struct {
-    char *input_file_redirection;
-    char *output_file_redirection;
-    bool is_output_append_mode;
+    char *filename;
+    bool is_append;
+} OutputRedirectionTarget;
+
+typedef struct {
+    char **input_files;
+    size_t input_files_count;
+    OutputRedirectionTarget *output_files;
+    size_t output_files_count;
 } RedirectionConfig;
 
 typedef struct {
@@ -28,7 +34,8 @@ typedef struct {
     size_t pipelines_count;
 } ParsedCommandGroup;
 
-ParsedCommandGroup *parse_command_grammar(const ShellTokenStream *token_stream);
-void free_parsed_command_group(ParsedCommandGroup *group);
+ParsedCommandGroup* parse_command_grammar(const ShellTokenStream *tokens_stream);
+void print_parsed_command_group(const ParsedCommandGroup *group);
+void free_parsed_command_group(ParsedCommandGroup *command_group);
 
 #endif
