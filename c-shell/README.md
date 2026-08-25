@@ -165,31 +165,3 @@ make clean. & Make all
 ### Execution
 
 ./shell.out
-
----
-
-## Testing Workflow
-
-# 1. Test frecency
-
-hop include
-
-hop src
-
-hop ~
-
-hop inc        # Jumps to include via frecency
-
-# 2. Test reveal
-
-reveal -at
-
-# 3. Test peek chunked reverse & line numbers
-
-peek -nr
-
-printf "one\n\ntwo\n" | peek -nr
-
-# 4. Test multi-redirection & piping
-
-cat < src/main.c < src/executor.c | > combined_sorted.txt
