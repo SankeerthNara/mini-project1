@@ -62,7 +62,7 @@ c-shell/
 
 ### Part A: Interactive Shell & Prompt
 
-* Dynamic Prompt: Shows <username@hostname:relative_path>. The starting root is shortened to ~. If any foreground command takes 2 seconds or more to run the time is added (like <username@hostname:~ sleep : 3s>).
+* Dynamic Prompt: Shows <username@hostname:relative_path>. The starting root is shortened to ~ . If any foreground command takes 2 seconds or more to run the time is added (like <username@hostname:~ sleep : 3s>).
 
 * Lexer / Parser: Handles any amount of whitespace quotes (" '). Escape sequences (\n, \t, etc.).
 
