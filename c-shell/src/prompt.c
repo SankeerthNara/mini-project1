@@ -1,58 +1,48 @@
 #include "prompt.h"
 #include "shell.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <pwd.h>
 
-void initialize_shell_prompt(void) {
-    if (getcwd(shell_ctx.startup_home_directory, sizeof(shell_ctx.startup_home_directory)) == NULL) {
-        perror("getcwd");
-        exit(EXIT_FAILURE);
+void display_shell_prompt(void) {
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        strncpy(hostname, "unknown", sizeof(hostname) - 1);
+        hostname[sizeof(hostname) - 1] = '\0';
     }
-    shell_ctx.has_previous_working_directory = false;
-    shell_ctx.previous_working_directory[0] = '\0';
-}
 
-static void compute_prompt_display_path(const char *current_directory, 
-                                        const char *home_directory, 
-                                        char *output_buffer, 
-                                        size_t buffer_size) {
-    size_t home_len = strlen(home_directory);
+    struct passwd *pw = getpwuid(getuid());
+    const char *username = pw ? pw->pw_name : "user";
 
-    if (strcmp(current_directory, home_directory) == 0) {
-        snprintf(output_buffer, buffer_size, "~");
-    } else if (strncmp(current_directory, home_directory, home_len) == 0 && 
-              (current_directory[home_len] == '/' || home_len == 1)) {
-        snprintf(output_buffer, buffer_size, "~%s", current_directory + home_len);
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        strncpy(cwd, "unknown", sizeof(cwd) - 1);
+        cwd[sizeof(cwd) - 1] = '\0';
+    }
+
+    char relative_dir[PATH_MAX];
+    size_t home_len = strlen(shell_ctx.startup_home_directory);
+
+    if (strcmp(cwd, shell_ctx.startup_home_directory) == 0) {
+        snprintf(relative_dir, sizeof(relative_dir), "~");
+    } else if (strncmp(cwd, shell_ctx.startup_home_directory, home_len) == 0 &&
+               cwd[home_len] == '/') {
+        snprintf(relative_dir, sizeof(relative_dir), "~%s", cwd + home_len);
     } else {
-        snprintf(output_buffer, buffer_size, "%s", current_directory);
+        snprintf(relative_dir, sizeof(relative_dir), "%s", cwd);
     }
-}
 
-void render_shell_prompt(void) {
-    char *username = NULL;
-    struct passwd *user_password_entry = getpwuid(getuid());
-    if (user_password_entry && user_password_entry->pw_name) {
-        username = user_password_entry->pw_name;
+    if (shell_ctx.last_foreground_duration_seconds >= 2 &&
+        strlen(shell_ctx.last_foreground_command) > 0) {
+        printf("<%s@%s:%s %s : %ds> ", username, hostname, relative_dir,
+               shell_ctx.last_foreground_command,
+               shell_ctx.last_foreground_duration_seconds);
+        shell_ctx.last_foreground_command[0] = '\0';
+        shell_ctx.last_foreground_duration_seconds = 0;
     } else {
-        username = getenv("USER");
-        if (!username) username = "user";
+        printf("<%s@%s:%s> ", username, hostname, relative_dir);
     }
-
-    char system_hostname[HOST_NAME_MAX + 1];
-    if (gethostname(system_hostname, sizeof(system_hostname)) != 0) {
-        strncpy(system_hostname, "unknown", sizeof(system_hostname) - 1);
-        system_hostname[sizeof(system_hostname) - 1] = '\0';
-    }
-
-    char current_working_directory[PATH_MAX];
-    if (getcwd(current_working_directory, sizeof(current_working_directory)) == NULL) {
-        strncpy(current_working_directory, "?", sizeof(current_working_directory));
-    }
-
-    char formatted_path[PATH_MAX];
-    compute_prompt_display_path(current_working_directory, 
-                                shell_ctx.startup_home_directory, 
-                                formatted_path, 
-                                sizeof(formatted_path));
-
-    printf("<%s@%s:%s> ", username, system_hostname, formatted_path);
     fflush(stdout);
 }

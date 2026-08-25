@@ -4,44 +4,60 @@
 #include "parser.h"
 #include "executor.h"
 #include "builtin_log.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 ShellContext shell_ctx;
 
+static void init_shell(void) {
+    if (getcwd(shell_ctx.startup_home_directory, sizeof(shell_ctx.startup_home_directory)) == NULL) {
+        perror("getcwd");
+        exit(EXIT_FAILURE);
+    }
+    shell_ctx.has_previous_working_directory = false;
+    shell_ctx.previous_working_directory[0] = '\0';
+    shell_ctx.last_foreground_command[0] = '\0';
+    shell_ctx.last_foreground_duration_seconds = 0;
+}
+
 int main(void) {
-    initialize_shell_prompt();
+    init_shell();
 
-    char raw_input_line[INPUT_BUFFER_MAX];
+    char *line = NULL;
+    size_t line_cap = 0;
 
-    while (1) {
-        render_shell_prompt();
+    while (true) {
+        reap_background_processes();
+        display_shell_prompt();
 
-        if (fgets(raw_input_line, sizeof(raw_input_line), stdin) == NULL) {
+        ssize_t read_bytes = getline(&line, &line_cap, stdin);
+        if (read_bytes == -1) {
             printf("\n");
             break;
         }
 
-        size_t input_length = strlen(raw_input_line);
-        if (input_length > 0 && raw_input_line[input_length - 1] == '\n') {
-            raw_input_line[input_length - 1] = '\0';
+        if (read_bytes > 0 && line[read_bytes - 1] == '\n') {
+            line[read_bytes - 1] = '\0';
         }
 
-        if (strlen(raw_input_line) == 0) {
+        if (strlen(line) == 0) {
             continue;
         }
 
-        log_record_command(raw_input_line);
+        ShellTokenStream tokens = tokenize_input_line(line);
+        ParsedCommandGroup *command_group = parse_command_grammar(&tokens);
 
-        ShellTokenStream token_stream = tokenize_input_line(raw_input_line);
-        ParsedCommandGroup *parsed_group = parse_command_grammar(&token_stream);
-
-        if (parsed_group != NULL) {
-            execute_command_group(parsed_group);
-            free_parsed_command_group(parsed_group);
+        if (command_group != NULL) {
+            log_command_to_history(line);
+            execute_command_group(command_group);
+            free_parsed_command_group(command_group);
         }
 
-        free_token_stream(&token_stream);
+        free_token_stream(&tokens);
     }
 
+    free(line);
     return 0;
 }

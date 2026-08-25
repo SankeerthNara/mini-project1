@@ -3,7 +3,7 @@
 
 #include "parser.h"
 
-// Executes the builtin 'hop' command
+// Executes the 'hop' command with direct pathing and persistent frecency fallback
 int execute_builtin_hop(const ParsedCommand *command);
 
 #endif

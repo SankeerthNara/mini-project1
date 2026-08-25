@@ -3,6 +3,7 @@
 
 #include "parser.h"
 
+void reap_background_processes(void);
 void execute_command_group(const ParsedCommandGroup *command_group);
 
 #endif

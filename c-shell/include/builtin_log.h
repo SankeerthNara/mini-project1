@@ -3,10 +3,7 @@
 
 #include "parser.h"
 
-// Logs a raw input line into the history file if it meets the criteria
-void log_record_command(const char *raw_command_line);
-
-// Executes the builtin 'log' command variants (print, purge, execute)
+void log_command_to_history(const char *command_line);
 int execute_builtin_log(const ParsedCommand *command);
 
 #endif

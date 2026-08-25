@@ -2,7 +2,7 @@
 #include "shell.h"
 #include "builtin_hop.h"
 #include "builtin_reveal.h"
-#include "builtin_log.h"
+#include "builtin_peek.h"
 #include "builtin_locate.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +41,6 @@ static char *resolve_executable_path(const char *command_name) {
         return NULL;
     }
 
-    // 1. Prefix '%': Skip CWD and search PATH directly
     if (command_name[0] == '%') {
         const char *search_name = command_name + 1;
         char *path_env = getenv("PATH");
@@ -65,7 +64,6 @@ static char *resolve_executable_path(const char *command_name) {
         return NULL;
     }
 
-    // 2. Contains '/': Literal path
     if (strchr(command_name, '/') != NULL) {
         if (is_executable_file(command_name)) {
             return strdup(command_name);
@@ -73,7 +71,6 @@ static char *resolve_executable_path(const char *command_name) {
         return NULL;
     }
 
-    // 3. Check Current Working Directory first
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         char local_path[PATH_MAX * 2];
@@ -83,7 +80,6 @@ static char *resolve_executable_path(const char *command_name) {
         }
     }
 
-    // 4. Search PATH directories
     char *path_env = getenv("PATH");
     if (path_env != NULL) {
         char *path_copy = strdup(path_env);
@@ -233,7 +229,7 @@ static int run_single_builtin_if_matched(const ParsedCommand *cmd) {
 
     if (strcmp(name, "hop") == 0) return execute_builtin_hop(cmd);
     if (strcmp(name, "reveal") == 0) return execute_builtin_reveal(cmd);
-    if (strcmp(name, "log") == 0) return execute_builtin_log(cmd);
+    if (strcmp(name, "peek") == 0) return execute_builtin_peek(cmd);
     if (strcmp(name, "locate") == 0) return execute_builtin_locate(cmd);
 
     return -2;
@@ -382,6 +378,6 @@ void execute_command_group(const ParsedCommandGroup *command_group) {
         return;
     }
 
-    // Only execute the first command group and ignore subsequent ones
+    // Only execute first command group per Part C constraint
     execute_pipeline(&command_group->pipelines_list[0]);
 }
