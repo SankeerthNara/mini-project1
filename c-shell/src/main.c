@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 ShellContext shell_ctx;
 
@@ -24,19 +25,36 @@ static void init_shell(void) {
 
 int main(void) {
     init_shell();
+    install_shell_signal_handlers();
+    initialize_terminal_control();
 
     char *line = NULL;
     size_t line_cap = 0;
+    bool stopped_eof_seen = false;
 
     while (true) {
         reap_background_processes();
         display_shell_prompt();
 
+        errno = 0;
         ssize_t read_bytes = getline(&line, &line_cap, stdin);
         if (read_bytes == -1) {
+            if (errno == EINTR) continue;
+
+            if (has_stopped_jobs() && !stopped_eof_seen) {
+                printf("cshell: there are stopped jobs\n");
+                fflush(stdout);
+                stopped_eof_seen = true;
+                clearerr(stdin);
+                continue;
+            }
+
+            hangup_all_jobs();
             printf("\n");
             break;
         }
+
+        stopped_eof_seen = false;
 
         if (read_bytes > 0 && line[read_bytes - 1] == '\n') {
             line[read_bytes - 1] = '\0';

@@ -1,0 +1,15 @@
+echo hello
+activities
+sleep 100
+activities
+sleep 100 &
+sleep 100
+activities
+sleep 100
+resume %1 bg
+activities
+resume %1 fg
+acttivities
+activities
+resume %1 fg --timeout 3
+SIGTERM
