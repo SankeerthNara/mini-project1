@@ -16,6 +16,7 @@ void remember_stopped_foreground(pid_t pgid, const pid_t *pids,
                                   const CommandPipeline *pipeline);
 int activity_builtin(const ParsedCommand *command);
 int resume_builtin(const ParsedCommand *command);
+int ping_builtin(const ParsedCommand *command);
 unsigned long latest_job_number(void);
 bool has_stopped_jobs(void);
 void hangup_all_jobs(void);

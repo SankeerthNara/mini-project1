@@ -1,15 +1,15 @@
-echo hello
-activities
-sleep 100
-activities
-sleep 100 &
-sleep 100
-activities
-sleep 100
-resume %1 bg
-activities
-resume %1 fg
-acttivities
-activities
-resume %1 fg --timeout 3
-SIGTERM
+spy 123 456
+sleep 100 < /etc/hosts &
+spy 19955
+clear
+snoop sleep 1
+grep -n -A80 -B10 "snoop_builtin" src/snoop.c
+grep -n -A100 -B20 "run_pipeline" src/executor.c
+snoop sleep 1
+snoop definitely_not_a_command
+snoop
+sleep 5 &
+snoop -p 27805
+sleep 30 &
+snoop -p 28046
+clear

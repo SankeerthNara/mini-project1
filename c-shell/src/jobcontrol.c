@@ -484,6 +484,117 @@ static void print_job_command(const BackgroundJob *job)
     fflush(stdout);
 }
 
+
+static bool parse_nonnegative_integer(const char *text, unsigned long *value)
+{
+    if (!text || text[0] == '\0') return false;
+    if (text[0] == '-') return false;
+
+    for (const char *p = text; *p != '\0'; ++p) {
+        if (*p < '0' || *p > '9') return false;
+    }
+
+    char *end = NULL;
+    errno = 0;
+    unsigned long parsed = strtoul(text, &end, 10);
+    if (errno == ERANGE || end == text || *end != '\0') return false;
+
+    *value = parsed;
+    return true;
+}
+
+static BackgroundProcess *find_process(pid_t pid)
+{
+    for (size_t i = 0; i < bg_count; ++i) {
+        for (size_t j = 0; j < bg_jobs[i].process_count; ++j) {
+            if (bg_jobs[i].processes[j].pid == pid)
+                return &bg_jobs[i].processes[j];
+        }
+    }
+    return NULL;
+}
+
+static bool parse_ping_target(const char *text, bool *is_job,
+                              unsigned long *number)
+{
+    if (!text || text[0] == '\0') return false;
+
+    if (text[0] == '%') {
+        if (!parse_job_number(text, number)) return false;
+        *is_job = true;
+        return true;
+    }
+
+    if (!parse_nonnegative_integer(text, number)) return false;
+    *is_job = false;
+    return true;
+}
+
+int ping_builtin(const ParsedCommand *command)
+{
+    if (!command || command->arguments_count < 1 ||
+        strcmp(command->arguments_list[0], "ping") != 0)
+        return 0;
+
+    if (command->arguments_count != 3) {
+        printf("ping: invalid syntax\n");
+        return 1;
+    }
+
+    unsigned long original_signal;
+    if (!parse_nonnegative_integer(command->arguments_list[2],
+                                   &original_signal)) {
+        printf("ping: invalid syntax\n");
+        return 1;
+    }
+
+    reap_background_processes();
+
+    bool is_job;
+    unsigned long target_number;
+    if (!parse_ping_target(command->arguments_list[1], &is_job,
+                           &target_number)) {
+        printf("ping: no such process found\n");
+        return 1;
+    }
+
+    int signal_number = (int)(original_signal % 64UL);
+
+    if (is_job) {
+        BackgroundJob *job = find_job(target_number);
+        if (!job) {
+            printf("ping: no such process found\n");
+            return 1;
+        }
+
+        if (kill(-job->pgid, signal_number) < 0) {
+            printf("ping: no such process found\n");
+            return 1;
+        }
+    } else {
+        if (target_number == 0 || target_number > (unsigned long)INT_MAX) {
+            printf("ping: no such process found\n");
+            return 1;
+        }
+
+        pid_t pid = (pid_t)target_number;
+        if (!find_process(pid)) {
+            printf("ping: no such process found\n");
+            return 1;
+        }
+
+        if (kill(pid, signal_number) < 0) {
+            printf("ping: no such process found\n");
+            return 1;
+        }
+    }
+
+    printf("Sent signal %lu to %s\n", original_signal,
+           command->arguments_list[1]);
+    fflush(stdout);
+    return 1;
+}
+
 int resume_builtin(const ParsedCommand *command)
 {
     if (!command || command->arguments_count < 1 ||

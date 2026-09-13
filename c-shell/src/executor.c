@@ -3,6 +3,8 @@
 #include "redirection.h"
 #include "process.h"
 #include "jobcontrol.h"
+#include "spy.h"
+#include "snoop.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,10 +43,14 @@ static int run_pipeline(const CommandPipeline *pipeline,
         const ParsedCommand *command = &pipeline->commands_list[0];
         if (!command->arguments_count) return 0;
 
-        if (activity_builtin(command)) return 0;
-
+                if (activity_builtin(command)) return 0;
         if (resume_builtin(command)) return 0;
+        if (spy_builtin(command)) return 0;
 
+        if (strcmp(command->arguments_list[0], "snoop") == 0) {
+            snoop_builtin(command);
+            return 0;
+        }
         if (is_builtin_command(command->arguments_list[0])) {
             if (command->redirection_config.input_files_count ||
                 command->redirection_config.output_files_count)
