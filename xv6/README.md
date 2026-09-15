@@ -55,11 +55,3 @@ time-slicing, while MLFQ adapts priority according to CPU usage and
 periodically boosts lower-priority processes to prevent starvation.
 
 
-## Scheduler Comparison
-
-| Scheduler | n | Avg. Turnaround | Avg. Waiting | Avg. Response |
-|---|---:|---:|---:|---:|
-| FIFO | 6 | 87.83 ticks | 80.67 ticks | 0.00 ticks |
-| **MLFQ** | **6** | **86.33 ticks** | **80.33 ticks** | **0.00 ticks** |
-| Round Robin | 6 | 88.00 ticks | 81.17 ticks | 0.00 ticks |
-
